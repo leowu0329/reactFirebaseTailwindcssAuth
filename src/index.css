@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  /* 設定預設字體：英數優先使用 Roboto，中文字則會自動回退到 Noto Sans TC */
+  --font-sans: "Roboto", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+}
