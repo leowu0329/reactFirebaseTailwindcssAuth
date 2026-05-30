@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { auth } from './firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
+import { supabase } from './supabase/config';
 
 // 頁面組件 (待建立)
 import LoginPage from './views/LoginPage';
@@ -15,16 +14,18 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // 只有當信箱已驗證，才視為有效登入狀態
-      if (currentUser && currentUser.emailVerified) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+    // 檢查初始狀態
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    // 監聽狀態改變
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) return <div className="flex h-screen items-center justify-center">讀取中...</div>;

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { auth } from '../firebase/config';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { supabase } from '../supabase/config';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import InputPassword from '../components/InputPassword';
@@ -15,12 +14,15 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      // 功能點 2: 檢查帳號是否已驗證
-      if (!user.emailVerified) {
-        await signOut(auth); // 未驗證則強制登出
+      if (error) throw error;
+
+      if (!data.user?.email_confirmed_at) {
+        await supabase.auth.signOut();
         Swal.fire({
           title: '信箱未驗證',
           text: '請先至信箱完成驗證再進行登入',

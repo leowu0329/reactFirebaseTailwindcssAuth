@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { auth } from '../firebase/config';
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from 'firebase/auth';
+import { supabase } from '../supabase/config';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import InputPassword from '../components/InputPassword';
@@ -16,20 +15,18 @@ const RegisterPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // 1. 建立帳號
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // 使用 Supabase 註冊並夾帶 metadata (顯示名稱)
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName,
+          },
+        },
+      });
 
-      // 2. 更新使用者名稱 (選擇性)
-      if (displayName) {
-        await updateProfile(user, { displayName });
-      }
-
-      // 3. 發送驗證信 (功能點 3)
-      await sendEmailVerification(user);
-
-      // 4. 強制登出 (功能點 2: 防止未驗證直接進入系統)
-      await signOut(auth);
+      if (error) throw error;
 
       await Swal.fire({
         title: '註冊成功！',

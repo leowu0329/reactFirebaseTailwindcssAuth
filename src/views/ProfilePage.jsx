@@ -1,24 +1,33 @@
-import { useState } from 'react';
-import { auth } from '../firebase/config';
-import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { supabase } from '../supabase/config';
 import { useNavigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import InputPassword from '../components/InputPassword';
 
 const ProfilePage = () => {
-  const user = auth.currentUser;
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [user, setUser] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setDisplayName(user?.user_metadata?.display_name || '');
+    });
+  }, []);
 
   // 功能點 11: 修改顯示名稱
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateProfile(user, { displayName });
+      const { error } = await supabase.auth.updateUser({
+        data: { display_name: displayName }
+      });
+      if (error) throw error;
       Swal.fire('更新成功', '個人資料已更新', 'success');
     } catch (error) {
       Swal.fire('更新失敗', error.message, 'error');
@@ -34,11 +43,8 @@ const ProfilePage = () => {
 
     setLoading(true);
     try {
-      // Firebase 更改密碼前必須重新驗證身份
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-      
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
       await Swal.fire('修改成功', '下次登入請使用新密碼', 'success');
       setCurrentPassword('');
       setNewPassword('');

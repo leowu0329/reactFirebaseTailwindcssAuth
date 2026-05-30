@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { auth } from '../firebase/config';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { supabase } from '../supabase/config';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
@@ -14,8 +13,9 @@ const ForgotPasswordPage = () => {
     setLoading(true);
 
     try {
-      // 功能點 6: 發送 Reset Password 信箱驗證
-      await sendPasswordResetEmail(auth, email);
+      // 使用 Supabase 重設密碼
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
       
       await Swal.fire({
         title: '重設郵件已寄出',

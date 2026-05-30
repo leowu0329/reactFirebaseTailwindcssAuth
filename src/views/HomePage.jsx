@@ -1,12 +1,20 @@
 // src/views/HomePage.jsx
-import { auth } from '../firebase/config';
-import { signOut } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { supabase } from '../supabase/config';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const user = auth.currentUser;
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -19,7 +27,7 @@ const HomePage = () => {
     });
 
     if (result.isConfirmed) {
-      await signOut(auth);
+      await supabase.auth.signOut();
       navigate('/login');
     }
   };
@@ -30,11 +38,11 @@ const HomePage = () => {
         <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-10 text-center text-white">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30">
             <span className="text-3xl font-bold">
-              {(user?.displayName || user?.email || '?')[0].toUpperCase()}
+              {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight">
-            歡迎回來，{user?.displayName || '使用者'}
+            歡迎回來，{user?.user_metadata?.display_name || '使用者'}
           </h1>
           <p className="mt-2 text-blue-100">{user?.email}</p>
         </div>
